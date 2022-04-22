@@ -70,6 +70,6 @@ Example 4
 
 ```elixir
  iex(1)> map = %{a: 1, b: 2, c: [%{a: 1, b: 2}, %{a: 5, c: 6}]}
- iex(2)> Value.get(map, "c[0].a",2)
+ iex(2)> Value.insert(map, "c[0].a",2)
  %{a: 1, b: 2, c: [%{a: 2, b: 2}, %{a: 5, c: 6}]}
 ```

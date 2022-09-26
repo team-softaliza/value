@@ -4,6 +4,7 @@ defmodule Value do
   """
   def insert(_scope, _fields, _value, _idx \\ nil)
   def insert(nil, [], _value, _idx), do: nil
+
   def insert(nil, fields, value, _idx) do
     fields
     |> Enum.reverse()
@@ -87,7 +88,11 @@ defmodule Value do
             |> Enum.map(&insert(&1, tail, value, idx_r))
           end
 
-        Map.replace(scope, field, scoped)
+        if field == "_" do
+          scoped
+        else
+          Map.replace(scope, field, scoped)
+        end
 
       {:array, field, index} ->
         {field, _} = existing_key(scope, field)
@@ -165,6 +170,10 @@ defmodule Value do
     get_scope(scope, field)
   end
 
+  def get_scope(scope, "_") when is_list(scope) do
+    scope
+  end
+
   def get_scope(scope, field) when is_map(scope) do
     get_value_from_field(scope, field)
   end
@@ -186,10 +195,17 @@ defmodule Value do
 
       {_field, :new} ->
         nil
+
+      {_scope, :array} ->
+        field
     end
   end
 
   defp get_value_from_field(_scope, _field), do: nil
+
+  defp existing_key(scope, "_") when is_list(scope) do
+    {"_", :base}
+  end
 
   defp existing_key(scope, field) do
     if Map.has_key?(scope, field) do
@@ -220,7 +236,7 @@ defmodule Value do
       [x] ->
         {:array, String.replace(param, x, "")}
 
-      [x, _, "@"] ->
+      [x, _, y] when y in ["@", "*"] ->
         {:array, String.replace(param, x, ""), "@"}
 
       [x, num] ->

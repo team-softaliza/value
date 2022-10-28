@@ -2,6 +2,19 @@ defmodule ValueTest do
   use ExUnit.Case
 
   describe "Value.get" do
+
+    test "get required value in plain key atom map" do
+      scope = %{a: 1, b: 2, c: 3}
+      assert 1 == Value.getr!(scope, "a")
+      assert {:ok, 1} == Value.getr(scope, "a")
+    end
+    test "throw error when try get required value in plain key atom map" do
+      scope = %{a: 1, b: 2, c: 3}
+      assert {:error, :required} == Value.getr(scope, "d")
+      assert_raise(RuntimeError, "Value of 'd' is required", fn ->
+        Value.getr!(scope, "d")
+      end)
+    end
     test "get value in plain key atom map" do
       scope = %{a: 1, b: 2, c: 3}
       assert 1 == Value.get(scope, "a")

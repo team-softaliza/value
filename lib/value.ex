@@ -130,6 +130,23 @@ defmodule Value do
     String.replace(string, search, "#{value}")
   end
 
+  @doc """
+    Get require value returning {:ok, value}
+  """
+  def getr(scope, field, default \\ nil, atom \\ :required) do
+    get(scope, field, default)
+    |> case do
+      nil -> {:error, atom}
+      v -> {:ok, v}
+    end
+  end
+  def getr!(scope, field, default \\ nil, atom \\ :required) do
+    get(scope, field, default)
+    |> case do
+      nil -> raise "Value of '#{field}' is #{atom}"
+      v -> v
+    end
+  end
   def get(_scope, _locate, _default \\ nil)
   def get(_scope, nil, default), do: default
   def get(nil, [], default), do: default

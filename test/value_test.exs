@@ -64,6 +64,7 @@ defmodule ValueTest do
       scope = %{"a" => 1, "b" => [1, 2], "c" => 3, "d" => [%{"a" => 4}, %{a: 1, c: 1}]}
       assert %{"a" => 1, "b" => [1, 2]} == Value.getm(scope, "b,a")
       assert %{"b" => [1, 2], "d.a" => [4, 1]} == Value.getm(scope, "b,d.a")
+      assert %{"b" => [1, 2], "d.a" => [4, 1]} == Value.getm({:ok, scope}, "b,d.a")
     end
   end
 

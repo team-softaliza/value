@@ -140,6 +140,7 @@ defmodule Value do
       v -> {:ok, v}
     end
   end
+
   def getr!(scope, field, default \\ nil, atom \\ :required) do
     get(scope, field, default)
     |> case do
@@ -147,6 +148,19 @@ defmodule Value do
       v -> v
     end
   end
+
+  def getm(scope, fields) when is_bitstring(fields) do
+    String.split(fields, ",")
+    |> Enum.map(fn fields ->
+      if String.starts_with?(fields, "^") do
+        String.replace(fields, "^", "")
+      else
+        {fields, get(scope, fields |> String.split("."))}
+      end
+    end)
+    |> Map.new()
+  end
+
   def get(_scope, _locate, _default \\ nil)
   def get(_scope, nil, default), do: default
   def get(nil, [], default), do: default

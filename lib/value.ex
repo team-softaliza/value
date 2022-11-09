@@ -171,7 +171,8 @@ defmodule Value do
     if String.starts_with?(fields, "^") do
       String.replace(fields, "^", "")
     else
-      get(scope, fields |> String.split("."), default)
+      String.split(fields, "|")
+      |> try_get(scope, default)
     end
   end
 
@@ -197,6 +198,14 @@ defmodule Value do
 
   def get(_scope, value, _default), do: value
 
+  def try_get([], _scope, default), do: default
+  def try_get([fld | flds], scope, default) do
+    get(scope, fld |> String.split("."), default)
+    |> case do
+      nil -> try_get(flds, scope, default)
+      value -> value
+    end
+  end
   def get_scope({_idx, scope}, field) do
     get_scope(scope, field)
   end

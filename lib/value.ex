@@ -146,7 +146,11 @@ defmodule Value do
         :else -> getr(scope, field, default)
       end
     else
-      getr(scope, field, opts)
+      get(scope, field, opts)
+      |> case do
+        nil -> {:error, :required}
+        v -> {:ok, v}
+      end
     end
   end
 

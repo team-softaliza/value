@@ -133,6 +133,23 @@ defmodule Value do
   @doc """
     Get require value returning {:ok, value}
   """
+  def getr(scope, field, opts) when is_list(opts) do
+    if Keyword.keyword?(opts) do
+      default = opts[:default]
+      has_when? = Keyword.has_key?(opts, :when)
+      when_value = opts[:when]
+      when_default = opts[:when_default]
+
+      cond do
+        has_when? && when_value == true -> getr(scope, field, default)
+        has_when? && when_value == false -> {:ok, when_default}
+        :else -> getr(scope, field, default)
+      end
+    else
+      getr(scope, field, opts)
+    end
+  end
+
   def getr(scope, field, default \\ nil, atom \\ :required) do
     get(scope, field, default)
     |> case do
@@ -149,6 +166,18 @@ defmodule Value do
     end
   end
 
+  def getm(scope, fields, opts) when is_bitstring(fields) do
+    has_when? = Keyword.has_key?(opts, :when)
+    when_value = opts[:when]
+    when_default = opts[:when_default]
+
+    cond do
+      has_when? && when_value == true -> getm(scope, fields)
+      has_when? && when_value == false -> when_default
+      :else -> getm(scope, fields)
+    end
+  end
+
   def getm(scope, fields) when is_bitstring(fields) do
     String.split(fields, ",")
     |> Enum.map(fn fields ->
@@ -162,9 +191,24 @@ defmodule Value do
   end
 
   def get(_scope, _locate, _default \\ nil)
+
+  def get(scope, field, opts) when is_list(opts) do
+    default = opts[:default]
+    has_when? = Keyword.has_key?(opts, :when)
+    when_value = opts[:when]
+    when_default = opts[:when_default]
+
+    cond do
+      has_when? && when_value == true -> get(scope, "#{field}", default)
+      has_when? && when_value == false -> when_default
+      :else -> get(scope, "#{field}", default)
+    end
+  end
+
   def get(_scope, nil, default), do: default
   def get(nil, [], default), do: default
   def get(scope, [], _default), do: scope
+
   def get(scope, field, default) when is_atom(field), do: get(scope, "#{field}", default)
 
   def get(scope, fields, default) when is_bitstring(fields) do
@@ -199,6 +243,7 @@ defmodule Value do
   def get(_scope, value, _default), do: value
 
   def try_get([], _scope, default), do: default
+
   def try_get([fld | flds], scope, default) do
     get(scope, fld |> String.split("."), default)
     |> case do
@@ -206,6 +251,7 @@ defmodule Value do
       value -> value
     end
   end
+
   def get_scope({_idx, scope}, field) do
     get_scope(scope, field)
   end

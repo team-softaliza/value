@@ -209,7 +209,7 @@ defmodule Value do
         :else -> get(scope, "#{field}", default)
       end
     else
-      get(scope, "#{field}", opts)
+      get(scope, "#{field}") || opts
     end
   end
 

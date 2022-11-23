@@ -134,7 +134,7 @@ defmodule Value do
     Get require value returning {:ok, value}
   """
   def getr(scope, field, opts) when is_list(opts) do
-    if Keyword.keyword?(opts) do
+    if Keyword.keyword?(opts) && opts != [] do
       default = opts[:default]
       has_when? = Keyword.has_key?(opts, :when)
       when_value = opts[:when]
@@ -193,15 +193,19 @@ defmodule Value do
   def get(_scope, _locate, _default \\ nil)
 
   def get(scope, field, opts) when is_list(opts) do
-    default = opts[:default]
-    has_when? = Keyword.has_key?(opts, :when)
-    when_value = opts[:when]
-    when_default = opts[:when_default]
+    if Keyword.keyword?(opts) && opts != [] do
+      default = opts[:default]
+      has_when? = Keyword.has_key?(opts, :when)
+      when_value = opts[:when]
+      when_default = opts[:when_default]
 
-    cond do
-      has_when? && when_value == true -> get(scope, "#{field}", default)
-      has_when? && when_value == false -> when_default
-      :else -> get(scope, "#{field}", default)
+      cond do
+        has_when? && when_value == true -> get(scope, "#{field}", default)
+        has_when? && when_value == false -> when_default
+        :else -> get(scope, "#{field}", default)
+      end
+    else
+      get(scope, "#{field}", opts)
     end
   end
 

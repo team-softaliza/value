@@ -62,11 +62,17 @@ defmodule ValueTest do
       assert [4, 1] == Value.get(scope, "d.a")
     end
 
+    test "get optional fields values with null values" do
+      scope = %{"a" => 5, "b" => ""}
+      assert 5 == Value.get(scope, "e|b|a", null_values: [nil, ""])
+    end
+
     test "get optional fields values" do
       scope = %{"a" => 1, "b" => [1, 2], "c" => 3, "d" => [%{"a" => 4}, %{a: 1, c: 1}]}
       assert [1, 2] == Value.get(scope, "b|a")
       assert 1 == Value.get(scope, "e|a")
       assert 1 == Value.get(scope, "e|f|a")
+      assert 1 == Value.get(scope, "e|f|a", null_values: [nil, ""])
       assert 1 == Value.get(scope, "e|f|a", when: true)
       assert nil == Value.get(scope, "e|f|a", when: false)
     end

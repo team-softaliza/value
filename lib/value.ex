@@ -206,7 +206,7 @@ defmodule Value do
       cond do
         has_when? && when_value == true -> get(scope, "#{field}", default)
         has_when? && when_value == false -> when_default
-        :else -> get(scope, "#{field}", default)
+        :else -> String.split(field, "|") |> try_get(scope, opts)
       end
     else
       get(scope, "#{field}") || opts
@@ -224,7 +224,7 @@ defmodule Value do
       String.replace(fields, "^", "")
     else
       String.split(fields, "|")
-      |> try_get(scope, default)
+      |> try_get(scope, default: default)
     end
   end
 
@@ -248,15 +248,25 @@ defmodule Value do
     end
   end
 
-  def get(_scope, value, _default), do: value
+  def get(_scope, value, _opts), do: value
 
-  def try_get([], _scope, default), do: default
+  def try_get([], _scope, opts), do: opts[:default]
 
-  def try_get([fld | flds], scope, default) do
-    get(scope, fld |> String.split("."), default)
-    |> case do
-      nil -> try_get(flds, scope, default)
-      value -> value
+  def try_get([fld | flds], scope, opts) do
+    null_values = default_null_values(opts)
+    value = get(scope, fld |> String.split("."), opts[:default])
+
+    cond do
+      value in null_values -> try_get(flds, scope, opts)
+      :else -> value
+    end
+  end
+
+  defp default_null_values(opts) do
+    case opts[:null_values] do
+      list when is_list(list) -> list
+      value -> [value]
+      nil -> [nil]
     end
   end
 

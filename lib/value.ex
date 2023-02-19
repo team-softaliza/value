@@ -266,7 +266,6 @@ defmodule Value do
     case opts[:null_values] do
       list when is_list(list) -> list
       value -> [value]
-      nil -> [nil]
     end
   end
 

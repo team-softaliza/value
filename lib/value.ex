@@ -148,7 +148,12 @@ defmodule Value do
     else
       get(scope, field, opts)
       |> case do
-        nil -> {:error, :required}
+        nil ->
+          if opts[:raise] do
+            raise "'#{field}' required!"
+          else
+            {:error, :required}
+          end
         v -> {:ok, v}
       end
     end

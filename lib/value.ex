@@ -74,12 +74,15 @@ defmodule Value do
         scoped =
           if is_list(value) do
             value
-            |> Flow.from_enumerable(max_demand: 25)
-            |> Flow.map(fn {idx, item} ->
+            # |> Flow.from_enumerable(max_demand: 25)
+            # |> Flow.map(fn {idx, item} ->
+            #   {idx, scope_deep |> Enum.at(idx) |> insert(tail, item, idx_r)}
+            # end)
+            # |> Flow.partition()
+            # |> Flow.reduce(fn -> [] end, fn item, acc -> acc ++ [item] end)
+            |> Enum.map(fn {idx, item} ->
               {idx, scope_deep |> Enum.at(idx) |> insert(tail, item, idx_r)}
             end)
-            |> Flow.partition()
-            |> Flow.reduce(fn -> [] end, fn item, acc -> acc ++ [item] end)
             |> Enum.to_list()
             |> Enum.sort_by(&elem(&1, 0))
             |> Enum.map(&elem(&1, 1))
@@ -149,12 +152,9 @@ defmodule Value do
       get(scope, field, opts)
       |> case do
         nil ->
-          if opts[:raise] do
-            raise "'#{field}' required!"
-          else
-            {:error, :required}
-          end
-        v -> {:ok, v}
+          {:error, :required}
+        v ->
+          {:ok, v}
       end
     end
   end

@@ -112,7 +112,7 @@ defmodule Value do
   end
 
   defp maybe_merge(nil, value, scope, field), do: Map.put(scope, field, value)
-  defp maybe_merge(_value1, nil, scope, field), do: Map.put(scope, field, "not find field to map")
+  defp maybe_merge(_value1, nil, scope, field), do: Map.put(scope, field, nil)
 
   defp maybe_merge(value1, value2, scope, field) when is_map(value1) and is_map(value2) do
     value3 = Map.merge(value1, value2)
@@ -153,6 +153,7 @@ defmodule Value do
       |> case do
         nil ->
           {:error, :required}
+
         v ->
           {:ok, v}
       end

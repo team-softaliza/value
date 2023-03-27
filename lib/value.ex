@@ -69,21 +69,22 @@ defmodule Value do
 
       {:array, field, "@"} ->
         {field, _} = existing_key(scope, field)
-        scope_deep = get_scope(scope, field)
+        scope_deep = get_scope(scope, field) || []
 
         scoped =
           if is_list(value) do
             value
+            |> Enum.with_index()
             # |> Flow.from_enumerable(max_demand: 25)
             # |> Flow.map(fn {idx, item} ->
             #   {idx, scope_deep |> Enum.at(idx) |> insert(tail, item, idx_r)}
             # end)
             # |> Flow.partition()
             # |> Flow.reduce(fn -> [] end, fn item, acc -> acc ++ [item] end)
-            |> Enum.map(fn {idx, item} ->
+            |> Enum.map(fn {item, idx} ->
               {idx, scope_deep |> Enum.at(idx) |> insert(tail, item, idx_r)}
             end)
-            |> Enum.to_list()
+            |> List.flatten()
             |> Enum.sort_by(&elem(&1, 0))
             |> Enum.map(&elem(&1, 1))
           else
@@ -94,7 +95,7 @@ defmodule Value do
         if field == "_" do
           scoped
         else
-          Map.replace(scope, field, scoped)
+          insert(scope, field, scoped)
         end
 
       {:array, field, index} ->

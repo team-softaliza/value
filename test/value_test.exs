@@ -116,9 +116,87 @@ defmodule ValueTest do
       assert %{"d" => [%{"a" => 4, "c" => 1}, %{a: 2}]} == Value.insert(scope, "d[0].c", 1)
     end
 
-    test "insert new field value on all list  " do
+    test "insert new field value on all list" do
       scope = [%{"a" => 4}, %{a: 2}]
       assert [%{"a" => 4, "c" => 1}, %{"c" => 1, a: 2}] == Value.insert(scope, "_[*].c", 1)
+    end
+
+    test "deep insert" do
+      map = %{
+        "data" => [
+          %{
+            "name" => "Empresa de Tal",
+            "key" => "fulano.tal@provedor.com.br",
+            "inserted_at" => "2020-01-23T20:20:12.015Z",
+            "updated_at" => "2020-01-23T20:20:12.015Z"
+          },
+          %{
+            "key" => "+5511912345678",
+            "name" => "Empresa de Tal",
+            "inserted_at" => "2020-01-23T20:20:13.015Z",
+            "updated_at" => "2020-01-23T20:20:13.015Z"
+          }
+        ],
+        "date" => "2023-03-27T13:07:08.277451Z"
+      }
+
+      keys = %{
+        "data.key" => "keys[@].key1",
+        "data.inserted_at" => "keys[@].inserted_at1",
+        "data.updated_at" => "keys[@].updated_at1",
+        "data.name" => "keys[@].name1",
+        "date" => "new_date"
+      }
+
+      value =
+        keys
+        |> Enum.reduce(%{}, fn {key, value}, acc ->
+          v = Value.get(map, key)
+          if is_nil(v), do: acc, else: Value.insert(acc, value, v)
+        end)
+
+      assert %{
+               "new_date" => "2023-03-27T13:07:08.277451Z",
+               "keys" => [
+                 %{
+                   "name1" => "Empresa de Tal",
+                   "key1" => "fulano.tal@provedor.com.br",
+                   "inserted_at1" => "2020-01-23T20:20:12.015Z",
+                   "updated_at1" => "2020-01-23T20:20:12.015Z"
+                 },
+                 %{
+                   "key1" => "+5511912345678",
+                   "name1" => "Empresa de Tal",
+                   "inserted_at1" => "2020-01-23T20:20:13.015Z",
+                   "updated_at1" => "2020-01-23T20:20:13.015Z"
+                 }
+               ]
+             } = value
+
+      keys = %{
+        "data.key" => "keys.key1",
+        "data.inserted_at" => "keys.inserted_at1",
+        "data.updated_at" => "keys.updated_at1",
+        "data.name" => "keys.name1",
+        "date" => "new_date"
+      }
+
+      value =
+        keys
+        |> Enum.reduce(%{}, fn {key, value}, acc ->
+          v = Value.get(map, key)
+          if is_nil(v), do: acc, else: Value.insert(acc, value, v)
+        end)
+
+      assert %{
+               "new_date" => "2023-03-27T13:07:08.277451Z",
+               "keys" => %{
+                 "name1" => ["Empresa de Tal", "Empresa de Tal"],
+                 "key1" => ["fulano.tal@provedor.com.br", "+5511912345678"],
+                 "inserted_at1" => ["2020-01-23T20:20:12.015Z", "2020-01-23T20:20:13.015Z"],
+                 "updated_at1" => ["2020-01-23T20:20:12.015Z", "2020-01-23T20:20:13.015Z"]
+               }
+             } = value
     end
   end
 end

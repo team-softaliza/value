@@ -254,7 +254,7 @@ defmodule Value do
     else
       cond do
         is_list(scope) -> Enum.map(scope, &nif_get(&1, fields, default))
-        is_map(scope) -> String.split(fields, "|") |> try_get(scope, default)
+        is_map(scope) -> String.split(fields, "|") |> try_get(scope, default: default)
         :else -> scope
       end
     end

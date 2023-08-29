@@ -2,6 +2,18 @@ defmodule Value do
   @moduledoc """
     Value
   """
+  use Rustler, otp_app: :value, crate: "value"
+
+  # When your NIF is loaded, it will override this function.
+  @spec nif_get(term, String.t(), term) :: String.t()
+  defp nif_get(_input, _field, _optional), do: :erlang.nif_error(:nif_not_loaded)
+
+  @spec nif_path(String.t()) :: String.t()
+  defp nif_path(_string), do: :erlang.nif_error(:nif_not_loaded)
+
+  @spec nif_get_many(term, String.t()) :: String.t()
+  defp nif_get_many(_input, _fields), do: :erlang.nif_error(:nif_not_loaded)
+
   def insert(_scope, _fields, _value, _idx \\ nil)
   def insert(nil, [], _value, _idx), do: nil
 
@@ -134,6 +146,16 @@ defmodule Value do
     String.replace(string, search, "#{value}")
   end
 
+  @spec path(String.t()) :: Map.t()
+  def path(fields) do
+    nif_path(fields)
+  end
+
+  @spec get_map(term, String.t()) :: Map.t()
+  def get_map(input, fields) do
+    nif_get_many(input, fields |> path())
+  end
+
   @doc """
     Get require value returning {:ok, value}
   """
@@ -230,8 +252,11 @@ defmodule Value do
     if String.starts_with?(fields, "^") do
       String.replace(fields, "^", "")
     else
-      String.split(fields, "|")
-      |> try_get(scope, default: default)
+      cond do
+        is_list(scope) -> Enum.map(scope, &nif_get(&1, fields, default))
+        is_map(scope) -> String.split(fields, "|") |> try_get(scope, default)
+        :else -> scope
+      end
     end
   end
 
@@ -261,7 +286,7 @@ defmodule Value do
 
   def try_get([fld | flds], scope, opts) do
     null_values = default_null_values(opts)
-    value = get(scope, fld |> String.split("."), opts[:default])
+    value = nif_get(scope, fld, opts[:default])
 
     cond do
       value in null_values -> try_get(flds, scope, opts)

@@ -253,9 +253,8 @@ defmodule Value do
       String.replace(fields, "^", "")
     else
       cond do
-        is_list(scope) -> Enum.map(scope, &nif_get(&1, fields, default))
-        is_map(scope) -> String.split(fields, "|") |> try_get(scope, default: default)
-        :else -> scope
+        is_list(scope) -> Enum.map(scope, &nif_get(unwrap(&1), fields, default))
+        :else -> String.split(fields, "|") |> try_get(scope, default: default)
       end
     end
   end
@@ -286,13 +285,17 @@ defmodule Value do
 
   def try_get([fld | flds], scope, opts) do
     null_values = default_null_values(opts)
-    value = nif_get(scope, fld, opts[:default])
+    value = scope |> unwrap() |> nif_get(fld, opts[:default])
 
     cond do
       value in null_values -> try_get(flds, scope, opts)
       :else -> value
     end
   end
+
+  def unwrap({:ok, value}), do: value
+  def unwrap({:error, value}), do: {:error, value}
+  def unwrap(value), do: value
 
   defp default_null_values(opts) do
     case opts[:null_values] do

@@ -1,4 +1,3 @@
-use std::collections::HashMap;
 use rustler::{Atom, Env, Error, ListIterator, Term, Encoder};
 mod atoms {
     rustler::atoms! {
@@ -98,26 +97,11 @@ fn get_in_depth<'a>(
         result = t0.encode(env);
       }
     }
-    // for i in 0..path.len() {
-    //     let field = path[i];
-    //     match result.map_get(field) {
-    //         Ok(result0) => result = result0,
-    //         _ => match Atom::from_str(env, field) {
-    //             Ok(fieldstr) => match result.map_get(fieldstr) {
-    //                 Ok(result0) => result = result0,
-    //                 _ => result = optional,
-    //             },
-    //             _ => result = optional,
-    //         },
-    //     };
-    // }
     Ok(result)
 }
 
 #[rustler::nif(name = "nif_get_many")]
 fn get_many<'a>(env: Env<'a>, term: Term<'a>, fields: Term) -> Result<Term<'a>, Error> {
-    // let t = encode(term)?;
-    // let t0 = decode(env, t)?;
     get_in_depth_many(
         env,
         fields.into_list_iterator()?,
@@ -136,12 +120,15 @@ fn get_in_depth_many<'a>(
         let mut arr: Vec<(Term, Term)> = Vec::new();
         match rustler::types::tuple::get_tuple(path).as_deref() {
           Ok(&[field, deep]) => {
+            // println!("{:?} e deep {:?}", field, deep);
             let field0:&str = field.decode()?;
             let length = match deep.list_length() {
               Ok(length) => length,
               _ => 0
             };
             if length > 0 {
+              // let some0 = get_in_depth(env, t1, term, atoms::nil().to_term(env))?;
+              // println!("deep {:?}, acc: {:?}, some0: {:?}", deep, acc, some0);
               for t0 in deep.into_list_iterator()? {
                 let mut t1:Vec<&str> = Vec::new();
                 t1.push(field0);
@@ -151,38 +138,22 @@ fn get_in_depth_many<'a>(
                     Ok(result) => result,
                     _ => map
                   };
-
+                  // println!("field {:?} e acc {:?} e map0 {:?}", field, acc, map0);
                   arr.push((x, map0));
                   t1.push(d);
                 }
                 let field1 = t1[1];
+                // println!("deep {:?}", t1);
                 let some = get_in_depth(env, t1, term, atoms::nil().to_term(env))?;
+                let rev: Vec<(Term, Term)> = arr.clone().into_iter().rev().collect::<Vec<(Term, Term)>>();
 
-                 let rev: Vec<(Term, Term)> = arr.clone().into_iter().rev().collect::<Vec<(Term, Term)>>();
-                 let final_result0 = rev.iter().fold(some, |acc, (field, val)| {
-
-                 let mut acc0 = acc;
-                 if acc.is_map() && val.is_map(){
-
-                  let d1 = match acc.decode::<HashMap<String, Term>>() {
-                    Ok(val1) => val1,
-                    _ => HashMap::new()
-                  };
-
-                  let mut d2 = match val.decode::<HashMap<String, Term>>() {
-                    Ok(val0) => val0,
-                    _ => HashMap::new()
-                  };
-                  for (k, v) in d1.iter() {
-                    d2.insert(k.to_string(), *v);
-                  }
-                  acc0 = d2.encode(env);
-                 }
-                  match val.map_put(field, acc0) {
+                 let final_result0 = rev.iter().fold(some, | acc, (field, val)| {
+                  match val.map_put(field, acc) {
                     Ok(x1) => x1,
                     Err(_x1) => atoms::nil().to_term(env)
                   }
                 });
+
                 let getted0 = match final_result0.map_get(field1) {
                   Ok(result) => result,
                   _ => final_result0
@@ -190,8 +161,10 @@ fn get_in_depth_many<'a>(
                 arr.clear();
                 acc = acc.map_put(field1, getted0)?
               }
+
               final_result = final_result.map_put(field, acc)?
             } else {
+
               let some = get_in_depth(env, [field0].to_vec(), term, atoms::nil().to_term(env))?;
               final_result = final_result.map_put(field, some)?
             }
